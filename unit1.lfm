@@ -1,0 +1,126 @@
+object Form1: TForm1
+  Left = 1009
+  Height = 288
+  Top = 15
+  Width = 321
+  BorderStyle = bsSingle
+  Caption = 'DatabaseTest'
+  ClientHeight = 288
+  ClientWidth = 321
+  OnCreate = FormCreate
+  LCLVersion = '1.2.0.3'
+  object DatabaseEntryDisplay1: TButton
+    Left = 8
+    Height = 34
+    Top = 8
+    Width = 244
+    Enabled = False
+    OnClick = FormCreate
+    TabOrder = 0
+  end
+  object DatabaseEntryDisplay2: TButton
+    Tag = 1
+    Left = 8
+    Height = 34
+    Top = 48
+    Width = 244
+    Enabled = False
+    OnClick = FormCreate
+    TabOrder = 1
+  end
+  object DatabaseEntryDisplay3: TButton
+    Tag = 2
+    Left = 8
+    Height = 34
+    Top = 88
+    Width = 244
+    Enabled = False
+    OnClick = FormCreate
+    TabOrder = 2
+  end
+  object DatabaseEntryDisplay4: TButton
+    Tag = 3
+    Left = 8
+    Height = 34
+    Top = 128
+    Width = 244
+    Enabled = False
+    OnClick = FormCreate
+    TabOrder = 3
+  end
+  object DatabaseEntryDisplay5: TButton
+    Tag = 4
+    Left = 8
+    Height = 34
+    Top = 168
+    Width = 244
+    Enabled = False
+    OnClick = FormCreate
+    TabOrder = 4
+  end
+  object DatabaseEntryDisplay6: TButton
+    Tag = 5
+    Left = 8
+    Height = 34
+    Top = 208
+    Width = 244
+    Enabled = False
+    OnClick = FormCreate
+    TabOrder = 5
+  end
+  object AddButton: TButton
+    Tag = 99
+    Left = 256
+    Height = 25
+    Top = 248
+    Width = 60
+    Caption = '+'
+    OnClick = AddButtonClick
+    TabOrder = 6
+  end
+  object ResetButton: TButton
+    Tag = 99
+    Left = 256
+    Height = 34
+    Top = 8
+    Width = 60
+    Caption = 'Reset'
+    OnClick = ResetButtonClick
+    TabOrder = 7
+  end
+  object DatabaseEntryNameField: TEdit
+    Left = 9
+    Height = 23
+    Top = 250
+    Width = 243
+    OnEditingDone = AddButtonClick
+    TabOrder = 8
+  end
+  object SQLConnection: TSQLite3Connection
+    Connected = False
+    LoginPrompt = False
+    DatabaseName = 'main'
+    KeepConnection = False
+    Transaction = SQLTransaction
+    HostName = 'localhost'
+    LogEvents = []
+    Options = []
+    left = 272
+    top = 56
+  end
+  object SQLTransaction: TSQLTransaction
+    Active = False
+    Action = caNone
+    Database = SQLConnection
+    left = 272
+    top = 112
+  end
+  object SQLQuery: TSQLQuery
+    FieldDefs = <>
+    Database = SQLConnection
+    Transaction = SQLTransaction
+    Params = <>
+    left = 272
+    top = 168
+  end
+end
