@@ -188,7 +188,7 @@ begin
   {$ENDIF}
 
   {$IFDEF WINDOWS}
-    SQLiteLibraryName := 'sqlite3.dll';
+    SQLiteLibraryName := ExtractFilePath(Application.ExeName) + '\sqlite3.dll';
   {$ENDIF}
 
   SQLConnection.DatabaseName := GetAppConfigDir(false) + db_databaseName;
