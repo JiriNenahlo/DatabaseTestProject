@@ -1,11 +1,11 @@
 object Form1: TForm1
   Left = 1009
-  Height = 288
+  Height = 280
   Top = 15
   Width = 321
   BorderStyle = bsSingle
   Caption = 'DatabaseTest'
-  ClientHeight = 288
+  ClientHeight = 280
   ClientWidth = 321
   OnCreate = FormCreate
   LCLVersion = '1.2.0.3'
@@ -91,9 +91,8 @@ object Form1: TForm1
   object DatabaseEntryNameField: TEdit
     Left = 9
     Height = 23
-    Top = 250
+    Top = 248
     Width = 243
-    OnEditingDone = AddButtonClick
     TabOrder = 8
   end
   object SQLConnection: TSQLite3Connection

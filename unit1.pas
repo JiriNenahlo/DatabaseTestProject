@@ -20,7 +20,10 @@ type
     DatabaseEntryDisplay5: TButton;
     DatabaseEntryDisplay6: TButton;
     AddButton: TButton;
+
+    // Do not set onEditingDone event for this one, messes up everything. Thrust me.
     DatabaseEntryNameField: TEdit;
+
     ResetButton: TButton;
     SQLConnection: TSQLite3Connection;
     SQLQuery: TSQLQuery;
@@ -42,6 +45,7 @@ var
   s_empty : string = '';
   s_databaseFull : string = 'Database is full!';
   s_alreadyExists : string = 'Already exists!';
+  s_inputIsEmpty : string = 'Input is empty!';
 
   // Database
   db_createTables : boolean;
@@ -107,7 +111,8 @@ end;
 
 procedure TForm1.AddButtonClick(Sender: TObject);
 var
-  currEntry : Integer;
+  currComponentCount,
+  currSuffix: Integer;
   isDuplicate : boolean = False;
 
 begin
@@ -117,30 +122,30 @@ begin
   // with each new entry and is unique), so there's no chance that the duplicate
   // name will affect the deleting operation later on)
   // However, leaving it here won't hurt and it seems to work as intended.
-  SQLQuery.SQL.Text := 'SELECT * FROM "' + db_tableName + '"';
-  SQLQuery.Open;
-  SQLQuery.First; // Move to the first record.
-  while(not SQLQuery.EOF) do
-  begin
-    // Check if the current entry matches with the input -> duplicate.
-    if (DatabaseEntryNameField.Text = SQLQuery.FieldByName(db_columnName).AsString) then
-       isDuplicate := True;
-
-    // Move to the next record.
-    SQLQuery.Next;
-    currEntry := currEntry + 1;
-  end;
-  SQLQuery.Close;
+  for currComponentCount := 0 to ComponentCount - 1 do
+      if (Components[currComponentCount] is TButton) then
+         // DatabaseEntryDisplay1-6.
+         for currSuffix := 1 to 6 do
+           begin
+             if Components[currComponentCount].Name = 'DatabaseEntryDisplay' + IntToStr(currSuffix) then
+                begin
+                  if (TButton(Components[currComponentCount]).Caption = DatabaseEntryNameField.Text) then
+                    isDuplicate := True;
+                end;
+           end;
 
   // Check if there is room for new entry.
   if not (DatabaseEntryDisplay6.Caption = s_empty) then
-      DatabaseEntryNameField.Caption := s_databaseFull
+      DatabaseEntryNameField.Text := s_databaseFull
   else
   // Check if the entry is duplicate (see above)
-  if (isDuplicate) then
-      DatabaseEntryNameField.Caption := s_alreadyExists
+  if (Trim(DatabaseEntryNameField.Text) = '') then
+     DatabaseEntryNameField.Text := s_inputIsEmpty
   else
-  if not (Trim(DatabaseEntryNameField.Text) = '') then
+  // Check if the input is not just empty (or spaces).
+  if (isDuplicate) then
+    DatabaseEntryNameField.Text := s_alreadyExists
+  else
       begin
         // Add entry to database with the value in the text field.
         SQLConnection.ExecuteDirect('INSERT INTO "' + db_tableName + '" VALUES '
@@ -149,11 +154,7 @@ begin
 
         // Make sure the content displays up-to-date data.
         SyncContent;
-      end
-  else
-      // Clear the value from the input field - prepare for next input even if
-      // previous input was not succesfull.
-      DatabaseEntryNameField.Caption := s_empty;
+      end;
 end;
 
 procedure TForm1.DatabaseEntryDisplayClick(Sender: TObject);
@@ -202,8 +203,8 @@ begin
               end;
          end;
 
-  // Database is not full anymore, do not show any error.
-  DatabaseEntryNameField.Caption := s_empty;
+  // Prepare the field for next input.
+  DatabaseEntryNameField.Text := s_empty;
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
