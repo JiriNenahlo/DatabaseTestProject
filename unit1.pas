@@ -33,15 +33,15 @@ type
     procedure SyncContent;
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure SyncContentButtons(SearchTag: integer; NewCpt: string);
-    procedure RestoreButtonsToDefaultState;
+    procedure RestoreContentToDefaultState;
   end;
 
 var
   Form1 : TForm1;
 
-  mEmptyDataSlotText : string = '';
-  mDatabaseFull : string = 'Database is full!';
-  mAlreadyExists : string = 'Already exists!'; // TODO: Implement this.
+  s_empty : string = '';
+  s_databaseFull : string = 'Database is full!';
+  s_alreadyExists : string = 'Already exists!';
 
   // Database
   db_createTables : boolean;
@@ -67,8 +67,8 @@ var
 
 begin
   // Removing single entries from database would be bugged if buttons won't
-  // restored to their default state.
-  RestoreButtonsToDefaultState;
+  // be restored to their default state.
+  RestoreContentToDefaultState;
 
   // Sync content from database to the content buttons.
   SQLQuery.SQL.Text := 'SELECT * FROM "' + db_tableName + '"';
@@ -86,30 +86,59 @@ begin
   SQLQuery.Close;
 
   // Clear the value from the input field - prepare for next input.
-  DatabaseEntryNameField.Caption := mEmptyDataSlotText;
+  DatabaseEntryNameField.Caption := s_empty;
 end;
 
 // Helper method that changes the caption of the button, called by SyncContent.
 procedure TForm1.SyncContentButtons(SearchTag: integer; NewCpt: string);
 var
-  i: Integer;
+  currComponentCount: Integer;
 
 begin
-  for i := 0 to ComponentCount - 1 do
-    if Components[i] is TButton then
+  for currComponentCount := 0 to ComponentCount - 1 do
+    if Components[currComponentCount] is TButton then
     begin
-      if TButton(Components[i]).Tag = SearchTag then
-         TButton(Components[i]).Caption := NewCpt;
-         if TButton(Components[i]).Caption = NewCpt then
-           TButton(Components[i]).Enabled := True;
+      if TButton(Components[currComponentCount]).Tag = SearchTag then
+         TButton(Components[currComponentCount]).Caption := NewCpt;
+         if TButton(Components[currComponentCount]).Caption = NewCpt then
+           TButton(Components[currComponentCount]).Enabled := True;
     end;
 end;
 
 procedure TForm1.AddButtonClick(Sender: TObject);
+var
+  currEntry : Integer;
+  isDuplicate : boolean = False;
+
 begin
+  // Check if the entry is not duplicate. This is not very useful as originally
+  // thought, because entries get deleted not based on the entry text, but the
+  // rowid, which is an INTEGER PRIMARY KEY (gets automatically incremented
+  // with each new entry and is unique), so there's no chance that the duplicate
+  // name will affect the deleting operation later on)
+  // However, leaving it here won't hurt and it seems to work as intended.
+  SQLQuery.SQL.Text := 'SELECT * FROM "' + db_tableName + '"';
+  SQLQuery.Open;
+  SQLQuery.First; // Move to the first record.
+  while(not SQLQuery.EOF) do
+  begin
+    // Check if the current entry matches with the input -> duplicate.
+    if (DatabaseEntryNameField.Text = SQLQuery.FieldByName(db_columnName).AsString) then
+       isDuplicate := True;
+
+    // Move to the next record.
+    SQLQuery.Next;
+    currEntry := currEntry + 1;
+  end;
+  SQLQuery.Close;
+
   // Check if there is room for new entry.
-  if not (DatabaseEntryDisplay6.Caption = mEmptyDataSlotText) then
-      DatabaseEntryNameField.Caption := mDatabaseFull
+  if not (DatabaseEntryDisplay6.Caption = s_empty) then
+      DatabaseEntryNameField.Caption := s_databaseFull
+  else
+  // Check if the entry is duplicate (see above)
+  if (isDuplicate) then
+      DatabaseEntryNameField.Caption := s_alreadyExists
   else
   if not (Trim(DatabaseEntryNameField.Text) = '') then
       begin
@@ -124,7 +153,7 @@ begin
   else
       // Clear the value from the input field - prepare for next input even if
       // previous input was not succesfull.
-      DatabaseEntryNameField.Caption := mEmptyDataSlotText;
+      DatabaseEntryNameField.Caption := s_empty;
 end;
 
 procedure TForm1.DatabaseEntryDisplayClick(Sender: TObject);
@@ -142,7 +171,7 @@ end;
 // This method performs a master deletion of everything.
 procedure TForm1.ResetButtonClick(Sender: TObject);
 begin
-  RestoreButtonsToDefaultState;
+  RestoreContentToDefaultState;
 
   // Remove everything from the database.
   SQLConnection.ExecuteDirect('DELETE FROM "' + db_tableName + '"');
@@ -152,29 +181,29 @@ end;
 // Helper method that restores buttons to the default state, also called by
 // SyncContent to fix removing single entries from database and then reflecting
 // new values.
-procedure TForm1.RestoreButtonsToDefaultState;
+procedure TForm1.RestoreContentToDefaultState;
 var
-  i, i2: Integer;
+  currComponentCount,
+  currSuffix: Integer;
 
 begin
   { Restore buttons to their initial state:
        enabled: false,
        text: < Empty data slot >. }
-
-  for i := 0 to ComponentCount - 1 do
-    if (Components[i] is TButton) then
+  for currComponentCount := 0 to ComponentCount - 1 do
+    if (Components[currComponentCount] is TButton) then
        // DatabaseEntryDisplay1-6.
-       for i2 := 1 to 6 do
+       for currSuffix := 1 to 6 do
          begin
-           if Components[i].Name = 'DatabaseEntryDisplay' + IntToStr(i2) then
+           if Components[currComponentCount].Name = 'DatabaseEntryDisplay' + IntToStr(currSuffix) then
               begin
-              TButton(Components[i]).Caption := mEmptyDataSlotText;
-              TButton(Components[i]).Enabled := False;
+              TButton(Components[currComponentCount]).Caption := s_empty;
+              TButton(Components[currComponentCount]).Enabled := False;
               end;
          end;
 
   // Database is not full anymore, do not show any error.
-  DatabaseEntryNameField.Caption := mEmptyDataSlotText;
+  DatabaseEntryNameField.Caption := s_empty;
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -186,21 +215,24 @@ end;
 
 procedure TForm1.SetupDatabase;
 begin
+  // Use supplied SQLite3 database file for windows with this program to avoid
+  // crash on systems without SQLite3 installed.
+  {$IFDEF WINDOWS}
+    SQLiteLibraryName := 'sqlite3.dll';
+  {$ENDIF}
+
+  // With Linux it should work fine out-of-the-box (needs testing).
   {$IFDEF UNIX}
     {$IFNDEF DARWIN}
       SQLiteLibraryName := './libsqlite3.so';
     {$ENDIF}
   {$ENDIF}
 
-  {$IFDEF WINDOWS}
-    SQLiteLibraryName := 'sqlite3.dll';
-  {$ENDIF}
-
   SQLConnection.DatabaseName := GetAppConfigDir(false) + db_databaseName;
 
   // Check if config directory exists
   if not DirectoryExists(GetAppConfigDir(false)) then
-    // If not: create it
+    // If not, create it
     MkDir(GetAppConfigDir(false));
 
   // No file = setup database
