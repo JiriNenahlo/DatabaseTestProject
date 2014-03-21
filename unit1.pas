@@ -70,26 +70,26 @@ begin
   // restored to their default state.
   RestoreButtonsToDefaultState;
 
-  // sync content from database to the content buttons.
+  // Sync content from database to the content buttons.
   SQLQuery.SQL.Text := 'SELECT * FROM "' + db_tableName + '"';
   SQLQuery.Open;
-  SQLQuery.First; // move to the first record
+  SQLQuery.First; // Move to the first record.
   while(not SQLQuery.EOF) do
   begin
-    // add the retrieved string to the list
+    // Add the retrieved string to the list.
     SyncContentButtons(pos, SQLQuery.FieldByName(db_columnName).AsString);
 
-    // move to the next record
+    // Move to the next record.
     SQLQuery.Next;
     pos := pos + 1;
   end;
   SQLQuery.Close;
 
-  // Clear the value from the input field - prepare for next input
+  // Clear the value from the input field - prepare for next input.
   DatabaseEntryNameField.Caption := mEmptyDataSlotText;
 end;
 
-// Helper method that changes the caption of the button, called by SyncContent
+// Helper method that changes the caption of the button, called by SyncContent.
 procedure TForm1.SyncContentButtons(SearchTag: integer; NewCpt: string);
 var
   i: Integer;
@@ -153,24 +153,25 @@ end;
 // SyncContent to fix removing single entries from database and then reflecting
 // new values.
 procedure TForm1.RestoreButtonsToDefaultState;
+var
+  i, i2: Integer;
+
 begin
   { Restore buttons to their initial state:
-       Enabled: false,
-       text: < Empty data slot >.}
-  // TODO: improve this code by iteration (?)
-  DatabaseEntryDisplay1.Caption := mEmptyDataSlotText;
-  DatabaseEntryDisplay2.Caption := mEmptyDataSlotText;
-  DatabaseEntryDisplay3.Caption := mEmptyDataSlotText;
-  DatabaseEntryDisplay4.Caption := mEmptyDataSlotText;
-  DatabaseEntryDisplay5.Caption := mEmptyDataSlotText;
-  DatabaseEntryDisplay6.Caption := mEmptyDataSlotText;
+       enabled: false,
+       text: < Empty data slot >. }
 
-  DatabaseEntryDisplay1.Enabled := False;
-  DatabaseEntryDisplay2.Enabled := False;
-  DatabaseEntryDisplay3.Enabled := False;
-  DatabaseEntryDisplay4.Enabled := False;
-  DatabaseEntryDisplay5.Enabled := False;
-  DatabaseEntryDisplay6.Enabled := False;
+  for i := 0 to ComponentCount - 1 do
+    if (Components[i] is TButton) then
+       // DatabaseEntryDisplay1-6.
+       for i2 := 1 to 6 do
+         begin
+           if Components[i].Name = 'DatabaseEntryDisplay' + IntToStr(i2) then
+              begin
+              TButton(Components[i]).Caption := mEmptyDataSlotText;
+              TButton(Components[i]).Enabled := False;
+              end;
+         end;
 
   // Database is not full anymore, do not show any error.
   DatabaseEntryNameField.Caption := mEmptyDataSlotText;
@@ -210,7 +211,7 @@ begin
 
   if db_createTables then
     begin
-      SQLConnection.ExecuteDirect('CREATE TABLE "' + db_tableName +'"('+
+      SQLConnection.ExecuteDirect('CREATE TABLE "' + db_tableName + '"(' +
                     ' "' + db_columnPrimaryKeyAutoIncrement + '" INTEGER PRIMARY KEY,' +
                     ' "' + db_columnName + '" TEXT);');
       SQLTransaction.Commit;
