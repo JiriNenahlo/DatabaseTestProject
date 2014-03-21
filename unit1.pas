@@ -62,7 +62,9 @@ begin
 end;
 
 procedure TForm1.SyncContent;
-var pos : integer = 0;
+var
+  pos : integer = 0;
+
 begin
   // Removing single entries from database would be bugged if buttons won't
   // restored to their default state.
@@ -72,13 +74,14 @@ begin
   SQLQuery.SQL.Text := 'SELECT * FROM "' + db_tableName + '"';
   SQLQuery.Open;
   SQLQuery.First; // move to the first record
-  while(not SQLQuery.EOF) do begin
+  while(not SQLQuery.EOF) do
+  begin
     // add the retrieved string to the list
     SyncContentButtons(pos, SQLQuery.FieldByName(db_columnName).AsString);
 
     // move to the next record
     SQLQuery.Next;
-    pos := pos +1;
+    pos := pos + 1;
   end;
   SQLQuery.Close;
 
@@ -90,13 +93,14 @@ end;
 procedure TForm1.SyncContentButtons(SearchTag: integer; NewCpt: string);
 var
   i: Integer;
+
 begin
   for i := 0 to ComponentCount - 1 do
     if Components[i] is TButton then
     begin
-      if TButton(Components[i]).Tag = SearchTag Then
+      if TButton(Components[i]).Tag = SearchTag then
          TButton(Components[i]).Caption := NewCpt;
-         if TButton(Components[i]).Caption = NewCpt Then
+         if TButton(Components[i]).Caption = NewCpt then
            TButton(Components[i]).Enabled := True;
     end;
 end;
@@ -104,12 +108,12 @@ end;
 procedure TForm1.AddButtonClick(Sender: TObject);
 begin
   // Check if there is room for new entry.
-  if not (DatabaseEntryDisplay6.Caption = mEmptyDataSlotText) Then
+  if not (DatabaseEntryDisplay6.Caption = mEmptyDataSlotText) then
       DatabaseEntryNameField.Caption := mDatabaseFull
-  Else
-  if not (Trim(DatabaseEntryNameField.Text) = '') Then
+  else
+  if not (Trim(DatabaseEntryNameField.Text) = '') then
       begin
-        // add entry to database with the value in the text field. }
+        // Add entry to database with the value in the text field.
         SQLConnection.ExecuteDirect('INSERT INTO "' + db_tableName + '" VALUES '
                     + '(null, "' + Trim(DatabaseEntryNameField.Text) + '");');
         SQLTransaction.Commit;
@@ -117,7 +121,7 @@ begin
         // Make sure the content displays up-to-date data.
         SyncContent;
       end
-  Else
+  else
       // Clear the value from the input field - prepare for next input even if
       // previous input was not succesfull.
       DatabaseEntryNameField.Caption := mEmptyDataSlotText;
@@ -152,7 +156,7 @@ procedure TForm1.RestoreButtonsToDefaultState;
 begin
   { Restore buttons to their initial state:
        Enabled: false,
-       text: < Empty data slot > }
+       text: < Empty data slot >.}
   // TODO: improve this code by iteration (?)
   DatabaseEntryDisplay1.Caption := mEmptyDataSlotText;
   DatabaseEntryDisplay2.Caption := mEmptyDataSlotText;
@@ -188,7 +192,7 @@ begin
   {$ENDIF}
 
   {$IFDEF WINDOWS}
-    SQLiteLibraryName := ExtractFilePath(Application.ExeName) + '\sqlite3.dll';
+    SQLiteLibraryName := 'sqlite3.dll';
   {$ENDIF}
 
   SQLConnection.DatabaseName := GetAppConfigDir(false) + db_databaseName;
@@ -202,7 +206,7 @@ begin
   db_createTables := not FileExists(SQLConnection.DatabaseName);
 
   SQLConnection.Open;
-  SQLTransaction.Active:=true;
+  SQLTransaction.Active := true;
 
   if db_createTables then
     begin
