@@ -21,7 +21,8 @@ type
     DatabaseEntryDisplay6: TButton;
     AddButton: TButton;
 
-    // Do not set onEditingDone event for this one, messes up everything. Thrust me.
+    // Do not set onEditingDone event for this one, messes up everything.
+    // Trust me.
     DatabaseEntryNameField: TEdit;
 
     ResetButton: TButton;
@@ -36,7 +37,7 @@ type
     procedure SyncContent;
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure SyncContentButtons(SearchTag: integer; NewCpt: string);
-    procedure RestoreContentToDefaultState;
+    procedure RestoreButtonsToDefaultState;
   end;
 
 var
@@ -45,7 +46,7 @@ var
   s_empty : string = '';
   s_databaseFull : string = 'Database is full!';
   s_alreadyExists : string = 'Already exists!';
-  s_inputIsEmpty : string = 'Input is empty!';
+  s_illegalInput : string = 'Illegal input!';
 
   // Database
   db_createTables : boolean;
@@ -72,7 +73,7 @@ var
 begin
   // Removing single entries from database would be bugged if buttons won't
   // be restored to their default state.
-  RestoreContentToDefaultState;
+  RestoreButtonsToDefaultState;
 
   // Sync content from database to the content buttons.
   SQLQuery.SQL.Text := 'SELECT * FROM "' + db_tableName + '"';
@@ -89,8 +90,27 @@ begin
   end;
   SQLQuery.Close;
 
-  // Clear the value from the input field - prepare for next input.
-  DatabaseEntryNameField.Caption := s_empty;
+  // Check if the database has any entries, if not, disable the 'Reset' button,
+  // because it is useless and won't do anything if clicked right now.
+  // Do not call the database for performance reasons, the buttons reflect
+  // database values, check them instead.
+  ResetButton.Enabled := not (DatabaseEntryDisplay1.Caption = s_empty);
+
+  // Disable input and '+' button if the database is full.
+  if not (DatabaseEntryDisplay6.Caption = s_empty) then
+    begin
+      AddButton.Enabled := False;
+      DatabaseEntryNameField.Enabled := False;
+      DatabaseEntryNameField.Caption := s_databaseFull;
+    end
+  else
+    begin
+      AddButton.Enabled := True;
+      // If database is not empty, prepare for the next input.
+      DatabaseEntryNameField.Enabled := True;
+      DatabaseEntryNameField.Caption := s_empty;
+    end;
+
 end;
 
 // Helper method that changes the caption of the button, called by SyncContent.
@@ -116,12 +136,7 @@ var
   isDuplicate : boolean = False;
 
 begin
-  // Check if the entry is not duplicate. This is not very useful as originally
-  // thought, because entries get deleted not based on the entry text, but the
-  // rowid, which is an INTEGER PRIMARY KEY (gets automatically incremented
-  // with each new entry and is unique), so there's no chance that the duplicate
-  // name will affect the deleting operation later on)
-  // However, leaving it here won't hurt and it seems to work as intended.
+  // Check if the entry is not duplicate. Useful when deleting single entries.
   for currComponentCount := 0 to ComponentCount - 1 do
       if (Components[currComponentCount] is TButton) then
          // DatabaseEntryDisplay1-6.
@@ -134,17 +149,15 @@ begin
                 end;
            end;
 
-  // Check if there is room for new entry.
-  if not (DatabaseEntryDisplay6.Caption = s_empty) then
-      DatabaseEntryNameField.Text := s_databaseFull
-  else
-  // Check if the entry is duplicate (see above)
-  if (Trim(DatabaseEntryNameField.Text) = '') then
-     DatabaseEntryNameField.Text := s_inputIsEmpty
-  else
-  // Check if the input is not just empty (or spaces).
+  // Check if entry is duplicate (see above)
   if (isDuplicate) then
     DatabaseEntryNameField.Text := s_alreadyExists
+  else
+  // Check if the entry contains illegal input
+  // (spaces and then also ", which will mess up strings for database operations)
+  if ((Trim(DatabaseEntryNameField.Text) = '')
+        OR (Pos('"', DatabaseEntryNameField.Text) > 0)) then
+     DatabaseEntryNameField.Text := s_illegalInput
   else
       begin
         // Add entry to database with the value in the text field.
@@ -159,10 +172,10 @@ end;
 
 procedure TForm1.DatabaseEntryDisplayClick(Sender: TObject);
 begin
-  // TODO: remove entry from database with the value of the button's tag.
+  // Remove entry from database with the value of the button's caption.
   SQLConnection.ExecuteDirect('DELETE FROM ' + db_tableName + ' WHERE '
-                   + db_columnPrimaryKeyAutoIncrement + ' = "'
-                   + IntToStr((Sender as TButton).Tag + 1) + '"');
+                   + db_columnName + ' = "'
+                   + (Sender as TButton).Caption + '"');
   SQLTransaction.Commit;
 
   // Make sure the content displays up-to-date data.
@@ -172,7 +185,10 @@ end;
 // This method performs a master deletion of everything.
 procedure TForm1.ResetButtonClick(Sender: TObject);
 begin
-  RestoreContentToDefaultState;
+  RestoreButtonsToDefaultState;
+
+  // Clear everything, including the input field.
+  DatabaseEntryNameField.Text := s_empty;
 
   // Remove everything from the database.
   SQLConnection.ExecuteDirect('DELETE FROM "' + db_tableName + '"');
@@ -182,15 +198,13 @@ end;
 // Helper method that restores buttons to the default state, also called by
 // SyncContent to fix removing single entries from database and then reflecting
 // new values.
-procedure TForm1.RestoreContentToDefaultState;
+procedure TForm1.RestoreButtonsToDefaultState;
 var
   currComponentCount,
   currSuffix: Integer;
 
 begin
-  { Restore buttons to their initial state:
-       enabled: false,
-       text: < Empty data slot >. }
+  // Restore buttons to their default state
   for currComponentCount := 0 to ComponentCount - 1 do
     if (Components[currComponentCount] is TButton) then
        // DatabaseEntryDisplay1-6.
@@ -198,13 +212,10 @@ begin
          begin
            if Components[currComponentCount].Name = 'DatabaseEntryDisplay' + IntToStr(currSuffix) then
               begin
-              TButton(Components[currComponentCount]).Caption := s_empty;
-              TButton(Components[currComponentCount]).Enabled := False;
+                TButton(Components[currComponentCount]).Caption := s_empty;
+                TButton(Components[currComponentCount]).Enabled := False;
               end;
          end;
-
-  // Prepare the field for next input.
-  DatabaseEntryNameField.Text := s_empty;
 end;
 
 procedure TForm1.FormClose(Sender: TObject; var CloseAction: TCloseAction);

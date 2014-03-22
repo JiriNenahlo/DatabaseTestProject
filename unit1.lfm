@@ -15,7 +15,7 @@ object Form1: TForm1
     Top = 8
     Width = 244
     Enabled = False
-    OnClick = FormCreate
+    OnClick = DatabaseEntryDisplayClick
     TabOrder = 0
   end
   object DatabaseEntryDisplay2: TButton
@@ -25,7 +25,7 @@ object Form1: TForm1
     Top = 48
     Width = 244
     Enabled = False
-    OnClick = FormCreate
+    OnClick = DatabaseEntryDisplayClick
     TabOrder = 1
   end
   object DatabaseEntryDisplay3: TButton
@@ -35,7 +35,7 @@ object Form1: TForm1
     Top = 88
     Width = 244
     Enabled = False
-    OnClick = FormCreate
+    OnClick = DatabaseEntryDisplayClick
     TabOrder = 2
   end
   object DatabaseEntryDisplay4: TButton
@@ -45,7 +45,7 @@ object Form1: TForm1
     Top = 128
     Width = 244
     Enabled = False
-    OnClick = FormCreate
+    OnClick = DatabaseEntryDisplayClick
     TabOrder = 3
   end
   object DatabaseEntryDisplay5: TButton
@@ -55,7 +55,7 @@ object Form1: TForm1
     Top = 168
     Width = 244
     Enabled = False
-    OnClick = FormCreate
+    OnClick = DatabaseEntryDisplayClick
     TabOrder = 4
   end
   object DatabaseEntryDisplay6: TButton
@@ -65,7 +65,7 @@ object Form1: TForm1
     Top = 208
     Width = 244
     Enabled = False
-    OnClick = FormCreate
+    OnClick = DatabaseEntryDisplayClick
     TabOrder = 5
   end
   object AddButton: TButton
